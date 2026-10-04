@@ -28,14 +28,22 @@ Install
 
 Which client starts
 -------------------
-jk2x finds an installed EternalJK2MV or JK2MV by itself (EternalJK2MV first).
-Otherwise it uses a portable client in the GameData folder
-(eternaljk2mvmp.exe, jk2mvmp.exe, nwhmp.exe). To pick a client yourself, add
--client before %command%:
+By default jk2x starts the first client it finds, in this order:
+EternalJK2MV (Tommyternal), JK2MV, NWH.
+
+To pick one, add -client and its name before %command%:
+
+     "...\GameData\jk2x\jk2x.exe" -client tommy %command%
+     "...\GameData\jk2x\jk2x.exe" -client jk2mv %command%
+     "...\GameData\jk2x\jk2x.exe" -client nwh %command%
+
+or the full path to any client exe:
 
      "...\GameData\jk2x\jk2x.exe" -client "C:\Games\jk2nwh\nwhmp.exe" %command%
 
-The client is started from its own folder, exactly as if you opened it.
+Clients are found where their installer put them, or as a portable exe in
+the GameData folder. The client is started from its own folder, exactly as
+if you opened it.
 
 Portable clients: portable builds (EternalJK2MV, JK2MV or NWH) can't read
 the game files from the Steam folder. They need copies of

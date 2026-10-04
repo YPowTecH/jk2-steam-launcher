@@ -24,16 +24,23 @@ Other arguments are passed on to the game. jk2x waits on the game's whole proces
 
 ### Which client
 
-1. `-client "<path to client exe>"` in the launch options, before `%command%`
-2. an installed client, via its installer's registry entry (`Uninstall\<key>\InstallLocation`): EternalJK2MV (`EternalJK2`), then JK2MV (`JK2MV`)
-3. a portable client in `GameData`: `eternaljk2mvmp.exe`, `jk2mvmp.exe`, `nwhmp.exe`
-4. `Program Files (x86)\EternalJK2`, `Program Files (x86)\JK2MV` (and `Program Files`)
+Pick one with `-client` before `%command%`, by short name or by path:
 
-| Client | Exe | Notes |
-|---|---|---|
-| **EternalJK2MV** ("Tommyternal"), TomArrow's JK2MV fork — the main target | `eternaljk2mvmp.exe` | Builds on [GitHub Releases](https://github.com/TomArrow/jk2mv/releases/tag/latest-postxp). **Use the Installer package**: the installed build finds the game files in the Steam folder by itself and jk2x finds it automatically. |
-| JK2MV | `jk2mvmp.exe` | Installed build: same as above. |
-| NWH (unmaintained, last v1.2.5 via [Monolith Mods](https://jk2t.ddns.net/)) | `nwhmp.exe` | Portable only. |
+```
+"...\GameData\jk2x\jk2x.exe" -client tommy %command%
+"...\GameData\jk2x\jk2x.exe" -client jk2mv %command%
+"...\GameData\jk2x\jk2x.exe" -client "D:\Games\jk2nwh\nwhmp.exe" %command%
+```
+
+Without `-client`, jk2x starts the first known client it finds, in the order of the table below. A known client is looked for through its installer's registry entry (`Uninstall\<key>\InstallLocation`), then as a portable exe in `GameData`, then in its default `Program Files (x86)\<key>` folder.
+
+| Short names | Client | Exe | Installer key | Notes |
+|---|---|---|---|---|
+| `tommy`, `tommyternal`, `eternaljk2mv`, `eternal` | **EternalJK2MV** ("Tommyternal"), TomArrow's JK2MV fork — the main target | `eternaljk2mvmp.exe` | `EternalJK2` | Builds on [GitHub Releases](https://github.com/TomArrow/jk2mv/releases/tag/latest-postxp). **Use the Installer package**: the installed build finds the game files in the Steam folder by itself. |
+| `jk2mv`, `mv` | JK2MV | `jk2mvmp.exe` | `JK2MV` | Installed build: same as above. |
+| `nwh` | NWH (unmaintained, last v1.2.5 via [Monolith Mods](https://jk2t.ddns.net/)) | `nwhmp.exe` | — | Portable only. |
+
+**Adding a client** is one line in the `CLIENTS` table at the top of [`src/jk2x.cpp`](src/jk2x.cpp): its short names, display name, exe, and installer key (or `NULL`). Its position in the table is its auto-detect priority.
 
 **Portable builds** (any of the above) can't read the game files from the Steam folder — JK2MV compiles `fs_assetspath` out of portable builds, and NWH ignores it — so they need `assets0-5.pk3` in their own `base` folder: either keep copies there, or put the client into `GameData`. Note that portable packages ship their own `OpenAL32.dll`, which would replace the stock game's `openal32.dll` in `GameData`.
 

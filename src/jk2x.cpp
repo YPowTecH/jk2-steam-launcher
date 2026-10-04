@@ -5,6 +5,7 @@ multiplayer exe.
 
 Steam launch option:
 	"<path>\jk2x.exe" %command%
+	"<path>\jk2x.exe" -client jk2mv %command%
 
 Steam replaces %command% with the stock exe it would have run:
 	GameData\jk2mp.exe  ("Launch Multiplayer")   -> start the client
@@ -16,19 +17,19 @@ jk2x waits until the game and everything it started have exited, so Steam
 keeps tracking the session (playtime, overlay, friends list). If jk2x is
 closed (Steam's "Stop" button) the game is closed with it.
 
-The client is looked up in this order:
-	1. -client "<path to the client exe>" on the command line
-	2. an installed client, by its installer's registry entry:
-	   EternalJK2MV, then JK2MV
-	3. a portable client in the GameData folder:
-	   eternaljk2mvmp.exe, jk2mvmp.exe, nwhmp.exe
-	4. Program Files (x86)\EternalJK2, \JK2MV (and Program Files)
+Which client:
+	-client <name>    a client from CLIENTS below by one of its short names
+	-client "<path>"  any client exe
+	(none)            the first client in CLIENTS that is found
 
-The client is started from its own folder. Installed EternalJK2MV/JK2MV
-find the game's assets0-5.pk3 in the Steam folder by themselves (through the
-registry entry Steam writes for JK2). Portable builds can't (fs_assetspath is
-compiled out of them), so they either live in GameData or have their own
-copies of the assets.
+A client is found, in order: through its installer's registry entry, as a
+portable exe in the GameData folder, in its default Program Files folder.
+It is started from its own folder, like its Start menu shortcut does.
+
+Installed EternalJK2MV/JK2MV find the game's assets0-5.pk3 in the Steam
+folder by themselves (through the registry entry Steam writes for JK2).
+Portable builds can't (fs_assetspath is compiled out of them), so they either
+live in GameData or have their own copies of the assets.
 */
 
 #include <windows.h>
@@ -38,21 +39,22 @@ copies of the assets.
 
 static const wchar_t *TITLE = L"jk2x";
 
-// Installers write SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\<key>
-// with InstallLocation; the key is also their default Program Files folder
-struct InstalledClient {
-	const wchar_t *key;
+struct Client {
+	std::vector<const wchar_t *> names;	// short names for -client, case-insensitive
+	const wchar_t *displayName;
 	const wchar_t *exe;
-};
-static const InstalledClient INSTALLED_CLIENTS[] = {
-	{ L"EternalJK2", L"eternaljk2mvmp.exe" },	// EternalJK2MV ("Tommyternal")
-	{ L"JK2MV", L"jk2mvmp.exe" },
+	// Installers write SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\<key>
+	// with InstallLocation; the key is also their default Program Files
+	// folder. NULL for clients without an installer.
+	const wchar_t *installKey;
 };
 
-static const wchar_t *PORTABLE_EXES[] = {
-	L"eternaljk2mvmp.exe",
-	L"jk2mvmp.exe",
-	L"nwhmp.exe",
+// Known clients. The order is the auto-detect priority when no -client is
+// given. To support another client, add a line.
+static const Client CLIENTS[] = {
+	{ { L"tommy", L"tommyternal", L"eternaljk2mv", L"eternal" }, L"EternalJK2MV (Tommyternal)", L"eternaljk2mvmp.exe", L"EternalJK2" },
+	{ { L"jk2mv", L"mv" }, L"JK2MV", L"jk2mvmp.exe", L"JK2MV" },
+	{ { L"nwh" }, L"NWH", L"nwhmp.exe", NULL },
 };
 
 static std::wstring BaseName(const std::wstring &path) {
@@ -111,19 +113,43 @@ static void AppendArg(std::wstring &cmdLine, const std::wstring &arg) {
 	cmdLine += L'"';
 }
 
+static const Client *ClientByName(const std::wstring &name) {
+	for (const Client &client : CLIENTS) {
+		for (const wchar_t *clientName : client.names) {
+			if (!lstrcmpiW(name.c_str(), clientName))
+				return &client;
+		}
+	}
+	return NULL;
+}
+
+static std::wstring ClientNameList() {
+	std::wstring list;
+	for (const Client &client : CLIENTS) {
+		list += L"  ";
+		list += client.names[0];
+		list += L"  -  ";
+		list += client.displayName;
+		list += L"\n";
+	}
+	return list;
+}
+
 // Installers record their folder for "Apps & features"; check both registry
 // views so 32-bit and 64-bit installs are found
-static std::wstring InstalledClientExe(const InstalledClient &client) {
+static std::wstring InstalledExe(const Client &client) {
+	if (!client.installKey)
+		return std::wstring();
+
 	const HKEY roots[] = { HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER };
 	const REGSAM views[] = { KEY_WOW64_32KEY, KEY_WOW64_64KEY };
-	const std::wstring keyPath = std::wstring(L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\") + client.key;
+	const std::wstring keyPath = std::wstring(L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\") + client.installKey;
 
 	for (HKEY root : roots) {
 		for (REGSAM view : views) {
 			HKEY key;
-			if (RegOpenKeyExW(root, keyPath.c_str(), 0, KEY_QUERY_VALUE | view, &key) != ERROR_SUCCESS) {
+			if (RegOpenKeyExW(root, keyPath.c_str(), 0, KEY_QUERY_VALUE | view, &key) != ERROR_SUCCESS)
 				continue;
-			}
 
 			wchar_t value[MAX_PATH] = {};
 			DWORD size = sizeof(value) - sizeof(wchar_t);
@@ -147,31 +173,22 @@ static std::wstring InstalledClientExe(const InstalledClient &client) {
 	return std::wstring();
 }
 
-static std::wstring FindClient(const std::wstring &override, const std::wstring &gameDataDir) {
-	if (!override.empty())
-		return FileExists(override) ? override : std::wstring();
-
-	for (const InstalledClient &client : INSTALLED_CLIENTS) {
-		std::wstring exe = InstalledClientExe(client);
-		if (!exe.empty())
-			return exe;
-	}
+// Finds client: installed, then portable in GameData, then the default
+// Program Files folder. Returns an empty string if it isn't there.
+static std::wstring LocateClient(const Client &client, const std::vector<std::wstring> &gameDataDirs) {
+	std::wstring exe = InstalledExe(client);
+	if (!exe.empty())
+		return exe;
 
 	std::vector<std::wstring> candidates;
-	std::vector<std::wstring> gameDataDirs;
-	if (!gameDataDir.empty())
-		gameDataDirs.push_back(gameDataDir);
-	gameDataDirs.push_back(DirName(ExeDir()));	// jk2x\ inside GameData
-	for (const std::wstring &dir : gameDataDirs) {
-		for (const wchar_t *exe : PORTABLE_EXES)
-			candidates.push_back(dir + L"\\" + exe);
-	}
-	for (const wchar_t *var : { L"ProgramFiles(x86)", L"ProgramFiles", L"ProgramW6432" }) {
-		std::wstring dir = EnvVar(var);
-		if (dir.empty())
-			continue;
-		for (const InstalledClient &client : INSTALLED_CLIENTS)
-			candidates.push_back(dir + L"\\" + client.key + L"\\" + client.exe);
+	for (const std::wstring &dir : gameDataDirs)
+		candidates.push_back(dir + L"\\" + client.exe);
+	if (client.installKey) {
+		for (const wchar_t *var : { L"ProgramFiles(x86)", L"ProgramFiles", L"ProgramW6432" }) {
+			std::wstring dir = EnvVar(var);
+			if (!dir.empty())
+				candidates.push_back(dir + L"\\" + client.installKey + L"\\" + client.exe);
+		}
 	}
 
 	for (const std::wstring &candidate : candidates) {
@@ -184,6 +201,45 @@ static std::wstring FindClient(const std::wstring &override, const std::wstring 
 
 static void ShowError(const std::wstring &message) {
 	MessageBoxW(NULL, message.c_str(), TITLE, MB_OK | MB_ICONERROR);
+}
+
+// Works out which client exe to start; shows an error and returns an empty
+// string if there is none
+static std::wstring ResolveClient(const std::wstring &requested, const std::wstring &gameDataDir) {
+	std::vector<std::wstring> gameDataDirs;
+	if (!gameDataDir.empty())
+		gameDataDirs.push_back(gameDataDir);
+	gameDataDirs.push_back(DirName(ExeDir()));	// jk2x\ inside GameData
+
+	if (requested.empty()) {
+		for (const Client &client : CLIENTS) {
+			std::wstring exe = LocateClient(client, gameDataDirs);
+			if (!exe.empty())
+				return exe;
+		}
+		ShowError(L"Could not find a multiplayer client.\n\n"
+			L"Install EternalJK2MV (github.com/TomArrow/jk2mv) or JK2MV, or choose\n"
+			L"a client by adding -client <name or path> before %command% in the\n"
+			L"Steam launch options. Names:\n\n" + ClientNameList());
+		return std::wstring();
+	}
+
+	if (const Client *client = ClientByName(requested)) {
+		std::wstring exe = LocateClient(*client, gameDataDirs);
+		if (exe.empty()) {
+			ShowError(std::wstring(client->displayName) + L" was not found.\n\n"
+				L"Install it, put " + client->exe + L" in the GameData folder, or give its\n"
+				L"full path: -client \"<path to " + client->exe + L">\"");
+		}
+		return exe;
+	}
+
+	if (FileExists(requested))
+		return requested;
+
+	ShowError(L"-client " + requested + L"\n\nis neither a known client nor an existing file. Use a path to the\n"
+		L"client exe, or one of these names:\n\n" + ClientNameList());
+	return std::wstring();
 }
 
 // Runs exe with cmdLine from workDir and waits until it and every process it
@@ -249,7 +305,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
 
 	std::wstring stockSP;		// GameData\jk2sp.exe if Steam asked for singleplayer
 	std::wstring gameDataDir;	// folder of the stock exe Steam passed, if any
-	std::wstring clientOverride;
+	std::wstring requestedClient;
 	std::wstring gameArgs;
 
 	for (int i = 1; i < argc; i++) {
@@ -262,7 +318,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
 		} else if (!lstrcmpiW(name.c_str(), L"jk2mp.exe")) {
 			gameDataDir = DirName(arg);
 		} else if (!lstrcmpiW(arg.c_str(), L"-client") && i + 1 < argc) {
-			clientOverride = argv[++i];
+			requestedClient = argv[++i];
 		} else {
 			AppendArg(gameArgs, arg);
 		}
@@ -277,19 +333,9 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
 		return (int)exitCode;
 	}
 
-	std::wstring client = FindClient(clientOverride, gameDataDir);
-	if (client.empty()) {
-		if (!clientOverride.empty()) {
-			ShowError(L"No client was found at\n" + clientOverride + L"\n\nCheck the -client path in the Steam launch options.");
-		} else {
-			ShowError(L"Could not find a multiplayer client.\n\n"
-				L"Install EternalJK2MV (github.com/TomArrow/jk2mv) or JK2MV, or point\n"
-				L"jk2x at a client by adding\n"
-				L"-client \"<path to the client exe>\"\n"
-				L"before %command% in the Steam launch options.");
-		}
+	std::wstring client = ResolveClient(requestedClient, gameDataDir);
+	if (client.empty())
 		return 1;
-	}
 
 	// start it from its own folder, like its Start menu shortcut does;
 	// portable clients find their files relative to it
