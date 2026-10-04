@@ -29,18 +29,21 @@ Pick one with `-client` before `%command%`, by short name or by path:
 ```
 "...\GameData\jk2x\jk2x.exe" -client tommy %command%
 "...\GameData\jk2x\jk2x.exe" -client jk2mv %command%
-"...\GameData\jk2x\jk2x.exe" -client "D:\Games\jk2nwh\nwhmp.exe" %command%
+"...\GameData\jk2x\jk2x.exe" -client nwh %command%
+"...\GameData\jk2x\jk2x.exe" -client "D:\Games\SomeClient\client.exe" %command%
 ```
+
+The JK2 CTF community ([jk2ctf.com/launcher](https://jk2ctf.com/launcher)) uses all three: Tommyternal for defrag, FFA and most public servers, NWH (anti-cheat) for organised CTF, and JK2MV as the engine the others build on.
 
 Without `-client`, jk2x starts the first known client it finds, in the order of the table below. A known client is looked for through its installer's registry entry (`Uninstall\<key>\InstallLocation`), then as a portable exe in `GameData`, then in its default `Program Files (x86)\<key>` folder.
 
 | Short names | Client | Exe | Installer key | Notes |
 |---|---|---|---|---|
-| `tommy`, `tommyternal`, `eternaljk2mv`, `eternal` | **EternalJK2MV** ("Tommyternal"), TomArrow's JK2MV fork — the main target | `eternaljk2mvmp.exe` | `EternalJK2` | Builds on [GitHub Releases](https://github.com/TomArrow/jk2mv/releases/tag/latest-postxp). **Use the Installer package**: the installed build finds the game files in the Steam folder by itself. |
+| `tommy`, `tommyternal`, `eternaljk2mv`, `eternal` | **EternalJK2MV** ("Tommyternal"), TomArrow's JK2MV fork — the main target | `eternaljk2mvmp.exe` | `EternalJK2` | Builds on [GitHub Releases](https://github.com/TomArrow/jk2mv/releases/tag/latest-postxp). **Use the Installer package**: the installed build finds the game files in the Steam folder by itself. Keeps its settings (`eternaljk2mv*.cfg`) and downloads in `Documents\jk2mv`, shared with JK2MV. |
 | `jk2mv`, `mv` | JK2MV | `jk2mvmp.exe` | `JK2MV` | Installed build: same as above. |
-| `nwh` | NWH (unmaintained, last v1.2.5 via [Monolith Mods](https://jk2t.ddns.net/)) | `nwhmp.exe` | — | Portable only. |
+| `nwh` | NWH, the anti-cheat client organised CTF runs on | `nwhmp.exe` | — | Portable only (no installer); Windows builds from the NWH download. Put it in `GameData` (where [soracle-launcher](https://github.com/soradozere/soracle-launcher) puts clients too) so `-client nwh` finds it and it can read the game files, or point `-client` at its exe. |
 
-**Adding a client** is one line in the `CLIENTS` table at the top of [`src/jk2x.cpp`](src/jk2x.cpp): its short names, display name, exe, and installer key (or `NULL`). Its position in the table is its auto-detect priority.
+**Adding a client** is one line in the `CLIENTS` table at the top of [`src/jk2x.cpp`](src/jk2x.cpp): its short names, display name, exe, and installer key (or `nullptr` if it has no installer). Its position in the table is its auto-detect priority.
 
 **Portable builds** (any of the above) can't read the game files from the Steam folder — JK2MV compiles `fs_assetspath` out of portable builds, and NWH ignores it — so they need `assets0-5.pk3` in their own `base` folder: either keep copies there, or put the client into `GameData`. Note that portable packages ship their own `OpenAL32.dll`, which would replace the stock game's `openal32.dll` in `GameData`.
 

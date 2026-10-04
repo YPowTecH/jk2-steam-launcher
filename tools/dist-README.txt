@@ -1,5 +1,5 @@
-jk2x - launch EternalJK2MV / JK2MV from Steam's Jedi Outcast
-=============================================================
+jk2x - launch Tommyternal / JK2MV / NWH from Steam's Jedi Outcast
+=================================================================
 
 jk2x makes Steam's "Play" button for Star Wars Jedi Knight II: Jedi Outcast
 start your multiplayer client (EternalJK2MV, JK2MV, NWH, ...) while Steam
@@ -9,10 +9,13 @@ starts the original game. Nothing of the client or the game is changed.
 You need
 --------
 - Jedi Outcast from Steam
-- a multiplayer client, best installed with its installer:
-    EternalJK2MV: https://github.com/TomArrow/jk2mv/releases
+- one or more multiplayer clients:
+    EternalJK2MV ("Tommyternal") - defrag, FFA, most public servers
+                  https://github.com/TomArrow/jk2mv/releases
                   (the "Windows.Package.Installer" download)
-    JK2MV:        https://jk2mv.org
+    JK2MV       - https://jk2mv.org (installer)
+    NWH         - anti-cheat client for organised CTF; no installer, put
+                  its files in the GameData folder
 
 Install
 -------
@@ -39,14 +42,14 @@ To pick one, add -client and its name before %command%:
 
 or the full path to any client exe:
 
-     "...\GameData\jk2x\jk2x.exe" -client "C:\Games\jk2nwh\nwhmp.exe" %command%
+     "...\GameData\jk2x\jk2x.exe" -client "D:\Games\SomeClient\client.exe" %command%
 
 Clients are found where their installer put them, or as a portable exe in
 the GameData folder. The client is started from its own folder, exactly as
 if you opened it.
 
-Portable clients: portable builds (EternalJK2MV, JK2MV or NWH) can't read
-the game files from the Steam folder. They need copies of
+Portable clients: NWH, and portable builds of EternalJK2MV or JK2MV, can't
+read the game files from the Steam folder. They need copies of
 GameData\base\assets0.pk3, assets1.pk3, assets2.pk3 and assets5.pk3 in their
 own base folder, or to be placed in GameData itself. The installed versions
 don't have this problem.

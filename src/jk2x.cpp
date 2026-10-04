@@ -1,7 +1,7 @@
 /*
 jk2x - Steam launcher for Star Wars Jedi Knight II: Jedi Outcast that starts
-a multiplayer client (EternalJK2MV, JK2MV, NWH, ...) instead of the stock
-multiplayer exe.
+a multiplayer client (EternalJK2MV, JK2MV, or any other client exe) instead
+of the stock multiplayer exe.
 
 Steam launch option:
     "<path>\jk2x.exe" %command%
@@ -312,9 +312,9 @@ std::wstring ResolveClient(const std::wstring &requested, const std::wstring &ga
 	if (const Client *client = ClientByName(requested)) {
 		std::wstring exe = LocateClient(*client, gameDataDirs);
 		if (exe.empty()) {
-			ShowError(std::wstring(client->displayName) + L" was not found.\n\n" + L"Install it, put " + client->exe +
-			          L" in the GameData folder, or give its\n" + L"full path: -client \"<path to " + client->exe +
-			          L">\"");
+			const std::wstring where = client->installKey != nullptr ? L"Install it, or put " : L"Put ";
+			ShowError(std::wstring(client->displayName) + L" was not found.\n\n" + where + client->exe +
+			          L" in the GameData folder, or give its\nfull path: -client \"<path to " + client->exe + L">\"");
 		}
 		return exe;
 	}
