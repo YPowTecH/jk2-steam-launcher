@@ -54,3 +54,20 @@ tools/package.sh --install  # also copies it into the Steam install
 ```
 
 Built 32-bit like the clients and the stock game, with a static runtime, so users need no Visual C++ redistributable.
+
+## Code quality
+
+Every build compiles with MSVC `/W4 /WX /permissive-` (all warnings, warnings are errors, strict standard conformance) and runs the MSVC code analyzer (`/analyze`; turn off with `-DJK2X_ANALYZE=OFF`).
+
+On top of that, before committing:
+
+```bash
+tools/lint.sh        # clang-format check + clang-tidy
+tools/lint.sh --fix  # apply clang-format
+```
+
+- [`.clang-tidy`](.clang-tidy): C++ Core Guidelines, CERT, clang static analyzer, bugprone, modernize, performance and readability checks, all as errors, plus naming rules. The two disabled checks are listed there with the reason.
+- [`.clang-format`](.clang-format): formatting (tabs for indentation, 120 columns).
+- [`.editorconfig`](.editorconfig) / [`.gitattributes`](.gitattributes): UTF-8, LF line endings.
+
+Needs LLVM (clang-format, clang-tidy) — set `LLVM_BIN` if it isn't in `C:\Program Files\LLVM\bin` or on `PATH`.

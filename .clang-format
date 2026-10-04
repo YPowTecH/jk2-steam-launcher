@@ -1,0 +1,17 @@
+# clang-format configuration. Check with tools/lint.sh, apply with tools/lint.sh --fix.
+BasedOnStyle: LLVM
+UseTab: ForIndentation
+IndentWidth: 4
+TabWidth: 4
+ContinuationIndentWidth: 4
+ColumnLimit: 120
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+Cpp11BracedListStyle: false
+PointerAlignment: Right
+AlignTrailingComments: true
+# <windows.h> must stay before the other Windows headers
+SortIncludes: Never
+IncludeBlocks: Preserve

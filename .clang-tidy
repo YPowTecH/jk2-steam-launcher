@@ -1,0 +1,38 @@
+# clang-tidy configuration. Run with tools/lint.sh.
+#
+# Broad industry check sets (C++ Core Guidelines, CERT, clang static
+# analyzer, bugprone, modernize, performance, readability), all as errors.
+# Disabled checks, and why:
+#   misc-include-cleaner               <windows.h> is an umbrella header; this check
+#                                      wants every Win32 sub-header included directly
+#   modernize-use-trailing-return-type style only (auto f() -> T); not a consensus
+#                                      standard and not used in this code base
+Checks: >
+  -*,
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -misc-include-cleaner,
+  -modernize-use-trailing-return-type
+WarningsAsErrors: '*'
+HeaderFilterRegex: ''
+FormatStyle: file
+CheckOptions:
+  readability-implicit-bool-conversion.AllowPointerConditions: true
+  # naming used throughout src/
+  readability-identifier-naming.NamespaceCase: lower_case
+  readability-identifier-naming.StructCase: CamelCase
+  readability-identifier-naming.FunctionCase: CamelCase
+  readability-identifier-naming.VariableCase: camelBack
+  readability-identifier-naming.ParameterCase: camelBack
+  readability-identifier-naming.MemberCase: camelBack
+  readability-identifier-naming.TypeAliasCase: CamelCase
+  readability-identifier-naming.GlobalConstantCase: UPPER_CASE
+  readability-identifier-naming.ConstexprVariableCase: UPPER_CASE
+  readability-identifier-naming.FunctionIgnoredRegexp: '^wWinMain$'
