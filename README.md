@@ -1,6 +1,6 @@
 # JK2 Steam Launcher
 
-A Steam launcher for **Star Wars Jedi Knight II: Jedi Outcast** that makes Steam's Play button start modern clients — [EternalJK2MV](https://github.com/TomArrow/jk2mv) ("Tommyternal"), [JK2MV](https://jk2mv.org) or NWH for multiplayer, [OpenJO](https://github.com/JACoders/OpenJK) for singleplayer, or any other exe — in the style of DoomBFA for Doom 3 BFG: the stock game stays untouched and Steam starts it through a launch option, so playtime, the overlay and the friends list keep working.
+A Steam launcher for **Star Wars Jedi Knight II: Jedi Outcast** that makes Steam's Play button start modern clients - [EternalJK2MV](https://github.com/TomArrow/jk2mv) ("Tommyternal"), [JK2MV](https://jk2mv.org) or NWH for multiplayer & [OpenJO](https://github.com/JACoders/OpenJK) for singleplayer
 
 JK2 Steam Launcher does not replace or modify the clients or the game. It is one small exe that starts the right program and waits for it.
 
@@ -42,8 +42,6 @@ Without `-client`, the launcher starts the first known client it finds, in table
 
 Singleplayer needs no option: "Launch Single Player" starts OpenJO if it's installed, otherwise the stock `jk2sp.exe`.
 
-The JK2 CTF community ([jk2ctf.com/launcher](https://jk2ctf.com/launcher)) uses all of these: Tommyternal for defrag, FFA and most public servers, NWH (anti-cheat) for organised CTF, JK2MV as the engine the others build on, and OpenJO for the campaign.
-
 **Multiplayer**
 
 | Short names | Client | Exe | Installer key | Notes |
@@ -72,17 +70,6 @@ tools/package.sh --install  # also copies it into the Steam install
 ```
 
 Built 32-bit like the clients and the stock game, with a static runtime, so users need no Visual C++ redistributable.
-
-### Releasing
-
-Push a version tag and the [Release workflow](.github/workflows/release.yml) builds `jk2-steam-launcher.zip` on GitHub and publishes it as a release (notes from [`tools/release-notes.md`](tools/release-notes.md) plus the changes since the previous tag):
-
-```bash
-git tag -a v1.2.3 -m "v1.2.3: ..."
-git push origin v1.2.3
-```
-
-For a tag that already exists: Actions → Release → Run workflow, and enter the tag.
 
 ## Code quality
 
