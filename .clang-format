@@ -15,3 +15,4 @@ AlignTrailingComments: true
 # <windows.h> must stay before the other Windows headers
 SortIncludes: Never
 IncludeBlocks: Preserve
+AlwaysBreakTemplateDeclarations: Yes

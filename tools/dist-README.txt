@@ -1,10 +1,10 @@
-jk2x - launch Tommyternal / JK2MV / NWH from Steam's Jedi Outcast
-=================================================================
+jk2x - launch Tommyternal / JK2MV / NWH / OpenJO from Steam's Jedi Outcast
+==========================================================================
 
 jk2x makes Steam's "Play" button for Star Wars Jedi Knight II: Jedi Outcast
-start your multiplayer client (EternalJK2MV, JK2MV, NWH, ...) while Steam
-keeps tracking it (playtime, overlay, friends list). Singleplayer still
-starts the original game. Nothing of the client or the game is changed.
+start modern clients - EternalJK2MV, JK2MV or NWH for multiplayer, OpenJO for
+singleplayer - while Steam keeps tracking them (playtime, overlay, friends
+list). Nothing of the clients or the game is changed.
 
 You need
 --------
@@ -16,6 +16,10 @@ You need
     JK2MV       - https://jk2mv.org (installer)
     NWH         - anti-cheat client for organised CTF; no installer, put
                   its files in the GameData folder
+- optionally, for the singleplayer campaign:
+    OpenJO      - https://github.com/JACoders/OpenJK/releases/tag/latest
+                  unzip OpenJO-windows-x86_64.zip into GameData\OpenJO
+                  (without it, Single Player starts the original game)
 
 Install
 -------
@@ -29,30 +33,32 @@ Install
 
 3. Press Play and pick "Launch Multiplayer" or "Launch Single Player".
 
-Which client starts
--------------------
-By default jk2x starts the first client it finds, in this order:
-EternalJK2MV (Tommyternal), JK2MV, NWH.
+Which program starts
+--------------------
+Single Player: OpenJO if it's installed, otherwise the original jk2sp.exe.
 
-To pick one, add -client and its name before %command%:
+Multiplayer: the first client jk2x finds - EternalJK2MV (Tommyternal),
+JK2MV, NWH. To pick one, add -client and its name before %command%:
 
      "...\GameData\jk2x\jk2x.exe" -client tommy %command%
      "...\GameData\jk2x\jk2x.exe" -client jk2mv %command%
      "...\GameData\jk2x\jk2x.exe" -client nwh %command%
 
-or the full path to any client exe:
+or "stock" for the game's own jk2mp.exe, or the full path to any client exe:
 
      "...\GameData\jk2x\jk2x.exe" -client "D:\Games\SomeClient\client.exe" %command%
 
 Clients are found where their installer put them, or as a portable exe in
-the GameData folder. The client is started from its own folder, exactly as
-if you opened it.
+the GameData folder (OpenJO also in GameData\OpenJO). Each is started from
+its own folder, exactly as if you opened it.
 
 Portable clients: NWH, and portable builds of EternalJK2MV or JK2MV, can't
 read the game files from the Steam folder. They need copies of
 GameData\base\assets0.pk3, assets1.pk3, assets2.pk3 and assets5.pk3 in their
 own base folder, or to be placed in GameData itself. The installed versions
-don't have this problem.
+don't have this problem, and neither does OpenJO in GameData\OpenJO (jk2x
+points it at the game files). OpenJO keeps its saves and settings in
+Documents\My Games\OpenJO, separate from the original game's saves.
 
 Anything after %command% (like +set fs_game ProAt) is passed on to the game.
 

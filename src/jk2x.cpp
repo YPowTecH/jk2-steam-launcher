@@ -1,35 +1,41 @@
 /*
 jk2x - Steam launcher for Star Wars Jedi Knight II: Jedi Outcast that starts
-a multiplayer client (EternalJK2MV, JK2MV, or any other client exe) instead
-of the stock multiplayer exe.
+a modern client (EternalJK2MV, JK2MV, NWH, OpenJO, or any other exe) instead
+of the stock game exes.
 
 Steam launch option:
     "<path>\jk2x.exe" %command%
     "<path>\jk2x.exe" -client jk2mv %command%
 
 Steam replaces %command% with the stock exe it would have run:
-    GameData\jk2mp.exe  ("Launch Multiplayer")   -> start the client
-    GameData\jk2sp.exe  ("Launch Single Player") -> start the stock jk2sp.exe
-Started without Steam (no stock exe on the command line) it starts the client.
+    GameData\jk2mp.exe  ("Launch Multiplayer")   -> a client from MP_CLIENTS
+    GameData\jk2sp.exe  ("Launch Single Player") -> the first engine from
+                                                    SP_CLIENTS that is found,
+                                                    else the stock jk2sp.exe
+Started without Steam (no stock exe on the command line) it does multiplayer.
 Every other argument is passed on to the game.
 
 jk2x waits until the game and everything it started have exited, so Steam
 keeps tracking the session (playtime, overlay, friends list). If jk2x is
 closed (Steam's "Stop" button) the game is closed with it.
 
-Which client:
-    -client <name>    a client from CLIENTS below by one of its short names
+Which multiplayer client:
+    -client <name>    a client from MP_CLIENTS by one of its short names
     -client "<path>"  any client exe
-    (none)            the first client in CLIENTS that is found
+    -client stock     the game's own jk2mp.exe
+    (none)            the first client in MP_CLIENTS that is found
+There is no option for singleplayer while SP_CLIENTS has a single entry.
 
-A client is found, in order: through its installer's registry entry, as a
-portable exe in the GameData folder, in its default Program Files folder.
-It is started from its own folder, like its Start menu shortcut does.
+A known client is found, in order: through its installer's registry entry,
+as a portable exe in GameData (or GameData\<portable dir>), in its default
+Program Files folder. It is started from its own folder, like its Start menu
+shortcut does.
 
 Installed EternalJK2MV/JK2MV find the game's assets0-5.pk3 in the Steam
 folder by themselves (through the registry entry Steam writes for JK2).
-Portable builds can't (fs_assetspath is compiled out of them), so they either
-live in GameData or have their own copies of the assets.
+Portable JK2MV builds can't (fs_assetspath is compiled out of them), nor can
+NWH, so they live in GameData or keep their own copies of the assets.
+OpenJO can: jk2x points its fs_cdpath at GameData when it lives elsewhere.
 */
 
 #include <windows.h>
@@ -53,28 +59,58 @@ constexpr const wchar_t *TITLE = L"jk2x";
 constexpr DWORD MAX_LONG_PATH = 32768;
 
 constexpr std::size_t MAX_CLIENT_NAMES = 4;
+constexpr std::size_t MAX_CLIENT_EXES = 2;
 
 struct Client {
 	// short names for -client, case-insensitive; unused slots are nullptr
 	std::array<const wchar_t *, MAX_CLIENT_NAMES> names;
 	const wchar_t *displayName;
-	const wchar_t *exe;
+	// exe file names, preferred first (64-bit before 32-bit); unused slots are nullptr
+	std::array<const wchar_t *, MAX_CLIENT_EXES> exes;
 	// Installers write SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\<key>
 	// with InstallLocation; the key is also their default Program Files
 	// folder. nullptr for clients without an installer.
 	const wchar_t *installKey;
+	// Portable clients are looked for in GameData and, if set, GameData\<dir>
+	const wchar_t *portableDir;
+	// Cvar that points the client at the game files when it doesn't live in
+	// GameData itself (jk2x passes +set <cvar> "<GameData>"). nullptr if the
+	// client has no such setting.
+	const wchar_t *gameDataCvar;
 };
 
-// Known clients. The order is the auto-detect priority when no -client is
-// given. To support another client, add a line.
+// Known clients per Steam menu entry. The order is the auto-detect priority
+// (when no -client is given). To support another client, add a line.
 // clang-format off
-constexpr std::array CLIENTS{
-	//      short names                                                display name                   exe                    installer key
-	Client{ { L"tommy", L"tommyternal", L"eternaljk2mv", L"eternal" }, L"EternalJK2MV (Tommyternal)", L"eternaljk2mvmp.exe", L"EternalJK2" },
-	Client{ { L"jk2mv", L"mv" },                                       L"JK2MV",                      L"jk2mvmp.exe",        L"JK2MV" },
-	Client{ { L"nwh" },                                                L"NWH",                        L"nwhmp.exe",          nullptr },
+constexpr std::array MP_CLIENTS{
+	//      short names                                                display name                   exes                                              installer key  portable dir  game files cvar
+	Client{ { L"tommy", L"tommyternal", L"eternaljk2mv", L"eternal" }, L"EternalJK2MV (Tommyternal)", { L"eternaljk2mvmp.exe" },                         L"EternalJK2", nullptr,      nullptr },
+	Client{ { L"jk2mv", L"mv" },                                       L"JK2MV",                      { L"jk2mvmp.exe" },                                L"JK2MV",      nullptr,      nullptr },
+	Client{ { L"nwh" },                                                L"NWH",                        { L"nwhmp.exe" },                                  nullptr,       nullptr,      nullptr },
+};
+constexpr std::array SP_CLIENTS{
+	Client{ { L"openjo" },                                             L"OpenJO",                     { L"openjo_sp.x86_64.exe", L"openjo_sp.x86.exe" }, nullptr,       L"OpenJO",    L"fs_cdpath" },
 };
 // clang-format on
+
+// -client stock: the game's own exe that Steam would have run
+constexpr const wchar_t *STOCK_NAME = L"stock";
+
+struct Mode {
+	const wchar_t *option;      // command line option choosing the program; nullptr if none
+	const wchar_t *description; // for messages
+	const wchar_t *stockExe;    // the game's own exe for this mode
+	const wchar_t *installHint; // what to install when nothing is found
+};
+constexpr Mode MULTIPLAYER{ L"-client", L"multiplayer client", L"jk2mp.exe",
+	                        L"Install EternalJK2MV (github.com/TomArrow/jk2mv) or JK2MV" };
+constexpr Mode SINGLEPLAYER{ nullptr, L"singleplayer engine", L"jk2sp.exe",
+	                         L"Put OpenJO (github.com/JACoders/OpenJK/releases) in GameData\\OpenJO" };
+
+struct Launch {
+	std::wstring exe;
+	std::vector<std::wstring> args; // jk2x's own arguments, before the user's
+};
 
 struct HandleCloser {
 	void operator()(HANDLE handle) const noexcept {
@@ -196,8 +232,13 @@ std::vector<std::wstring> CommandLineArgs() {
 	return { argv.get(), argv.get() + argc };
 }
 
-const Client *ClientByName(const std::wstring &name) {
-	for (const Client &client : CLIENTS) {
+bool HasGameFiles(const std::wstring &dir) {
+	return FileExists(dir + L"\\base\\assets0.pk3");
+}
+
+template <typename Clients>
+const Client *ClientByName(const Clients &clients, const std::wstring &name) {
+	for (const Client &client : clients) {
 		for (const wchar_t *clientName : client.names) {
 			if (clientName != nullptr && EqualsIgnoreCase(name, clientName)) {
 				return &client;
@@ -207,15 +248,35 @@ const Client *ClientByName(const std::wstring &name) {
 	return nullptr;
 }
 
-std::wstring ClientNameList() {
+// The known client an exe path belongs to, by its file name
+template <typename Clients>
+const Client *ClientByExe(const Clients &clients, const std::wstring &exePath) {
+	const std::wstring fileName = BaseName(exePath);
+	for (const Client &client : clients) {
+		for (const wchar_t *exe : client.exes) {
+			if (exe != nullptr && EqualsIgnoreCase(fileName, exe)) {
+				return &client;
+			}
+		}
+	}
+	return nullptr;
+}
+
+template <typename Clients>
+std::wstring ClientNameList(const Clients &clients, const Mode &mode) {
 	std::wstring list;
-	for (const Client &client : CLIENTS) {
+	for (const Client &client : clients) {
 		list += L"  ";
 		list += client.names[0];
 		list += L"  -  ";
 		list += client.displayName;
 		list += L"\n";
 	}
+	list += L"  ";
+	list += STOCK_NAME;
+	list += L"  -  the game's own ";
+	list += mode.stockExe;
+	list += L"\n";
 	return list;
 }
 
@@ -240,9 +301,14 @@ std::wstring InstalledExe(const Client &client) {
 				continue;
 			}
 
-			std::wstring exe = dir + L'\\' + client.exe;
-			if (FileExists(exe)) {
-				return exe;
+			for (const wchar_t *exeName : client.exes) {
+				if (exeName == nullptr) {
+					continue;
+				}
+				std::wstring exe = dir + L'\\' + exeName;
+				if (FileExists(exe)) {
+					return exe;
+				}
 			}
 		}
 	}
@@ -250,31 +316,39 @@ std::wstring InstalledExe(const Client &client) {
 	return {};
 }
 
-// Finds client: installed, then portable in GameData, then the default
-// Program Files folder. Returns an empty string if it isn't there.
+// Finds client: installed, then portable in GameData (or GameData\<portable
+// dir>), then the default Program Files folder. Empty if it isn't there.
 std::wstring LocateClient(const Client &client, const std::vector<std::wstring> &gameDataDirs) {
 	std::wstring exe = InstalledExe(client);
 	if (!exe.empty()) {
 		return exe;
 	}
 
-	std::vector<std::wstring> candidates;
-	candidates.reserve(gameDataDirs.size() + 3);
+	std::vector<std::wstring> dirs;
 	for (const std::wstring &dir : gameDataDirs) {
-		candidates.push_back(dir + L'\\' + client.exe);
+		dirs.push_back(dir);
+		if (client.portableDir != nullptr) {
+			dirs.push_back(dir + L'\\' + client.portableDir);
+		}
 	}
 	if (client.installKey != nullptr) {
 		for (const wchar_t *var : { L"ProgramFiles(x86)", L"ProgramFiles", L"ProgramW6432" }) {
 			const std::wstring dir = EnvVar(var);
 			if (!dir.empty()) {
-				candidates.push_back(dir + L'\\' + client.installKey + L'\\' + client.exe);
+				dirs.push_back(dir + L'\\' + client.installKey);
 			}
 		}
 	}
 
-	for (std::wstring &candidate : candidates) {
-		if (FileExists(candidate)) {
-			return std::move(candidate);
+	for (const std::wstring &dir : dirs) {
+		for (const wchar_t *exeName : client.exes) {
+			if (exeName == nullptr) {
+				continue;
+			}
+			std::wstring candidate = dir + L'\\' + exeName;
+			if (FileExists(candidate)) {
+				return candidate;
+			}
 		}
 	}
 
@@ -285,49 +359,79 @@ void ShowError(const std::wstring &message) {
 	MessageBoxW(nullptr, message.c_str(), TITLE, MB_OK | MB_ICONERROR);
 }
 
-// Works out which client exe to start; shows an error and returns an empty
-// string if there is none
-std::wstring ResolveClient(const std::wstring &requested, const std::wstring &gameDataDir) {
-	std::vector<std::wstring> gameDataDirs;
-	if (!gameDataDir.empty()) {
-		gameDataDirs.push_back(gameDataDir);
-	}
-	gameDataDirs.push_back(DirName(ExeDir())); // jk2x\ inside GameData
+struct GameDataPaths {
+	std::vector<std::wstring> searchDirs; // where portable clients may live
+	std::wstring gameData;                // the one holding the game files; empty if unknown
+};
 
-	if (requested.empty()) {
-		for (const Client &client : CLIENTS) {
-			std::wstring exe = LocateClient(client, gameDataDirs);
+// What to start for exe: a known client living outside GameData that can
+// read the game files from elsewhere gets pointed at GameData
+Launch LaunchFor(std::wstring exe, const Client *client, const GameDataPaths &paths) {
+	Launch launch{ std::move(exe), {} };
+	if (client != nullptr && client->gameDataCvar != nullptr && !paths.gameData.empty() &&
+	    !EqualsIgnoreCase(DirName(launch.exe), paths.gameData)) {
+		launch.args = { L"+set", client->gameDataCvar, paths.gameData };
+	}
+	return launch;
+}
+
+// Works out what to start for mode. stockExe is the game's own exe (empty if
+// unknown). Shows an error and returns nothing if there is nothing to start.
+template <typename Clients>
+std::optional<Launch> ResolveLaunch(const Clients &clients, const Mode &mode, const std::wstring &requested,
+                                    const GameDataPaths &paths, const std::wstring &stockExe) {
+	const std::wstring names = ClientNameList(clients, mode);
+
+	// a mode without an option (singleplayer) always auto-detects
+	if (requested.empty() || mode.option == nullptr) {
+		for (const Client &client : clients) {
+			std::wstring exe = LocateClient(client, paths.searchDirs);
 			if (!exe.empty()) {
-				return exe;
+				return LaunchFor(std::move(exe), &client, paths);
 			}
 		}
-		ShowError(L"Could not find a multiplayer client.\n\n"
-		          L"Install EternalJK2MV (github.com/TomArrow/jk2mv) or JK2MV, or choose\n"
-		          L"a client by adding -client <name or path> before %command% in the\n"
-		          L"Steam launch options. Names:\n\n" +
-		          ClientNameList());
-		return {};
+		if (&mode == &SINGLEPLAYER && !stockExe.empty()) {
+			return Launch{ stockExe, {} }; // no replacement engine: the original game
+		}
+		std::wstring message = std::wstring(L"Could not find a ") + mode.description + L".\n\n" + mode.installHint;
+		if (mode.option != nullptr) {
+			message += std::wstring(L", or choose one by adding\n") + mode.option +
+			           L" <name or path> before %command% in the Steam launch options. Names:\n\n" + names;
+		}
+		ShowError(message);
+		return std::nullopt;
 	}
 
-	if (const Client *client = ClientByName(requested)) {
-		std::wstring exe = LocateClient(*client, gameDataDirs);
+	if (EqualsIgnoreCase(requested, STOCK_NAME)) {
+		if (!stockExe.empty() && FileExists(stockExe)) {
+			return Launch{ stockExe, {} };
+		}
+		ShowError(std::wstring(L"The game's own ") + mode.stockExe + L" was not found.");
+		return std::nullopt;
+	}
+
+	if (const Client *client = ClientByName(clients, requested)) {
+		std::wstring exe = LocateClient(*client, paths.searchDirs);
 		if (exe.empty()) {
 			const std::wstring where = client->installKey != nullptr ? L"Install it, or put " : L"Put ";
-			ShowError(std::wstring(client->displayName) + L" was not found.\n\n" + where + client->exe +
-			          L" in the GameData folder, or give its\nfull path: -client \"<path to " + client->exe + L">\"");
+			const std::wstring exeName = client->exes[0];
+			ShowError(std::wstring(client->displayName) + L" was not found.\n\n" + where + exeName +
+			          L" in the GameData folder, or give its\nfull path: " + mode.option + L" \"<path to " + exeName +
+			          L">\"");
+			return std::nullopt;
 		}
-		return exe;
+		return LaunchFor(std::move(exe), client, paths);
 	}
 
 	if (FileExists(requested)) {
-		return requested;
+		return LaunchFor(requested, ClientByExe(clients, requested), paths);
 	}
 
-	ShowError(L"-client " + requested +
-	          L"\n\nis neither a known client nor an existing file. Use a path to the\n"
-	          L"client exe, or one of these names:\n\n" +
-	          ClientNameList());
-	return {};
+	ShowError(std::wstring(mode.option) + L" " + requested +
+	          L"\n\nis neither a known name nor an existing file. Use a path to an exe,\n"
+	          L"or one of these names:\n\n" +
+	          names);
+	return std::nullopt;
 }
 
 // Waits for the job's last process to exit; false if the port failed
@@ -414,8 +518,9 @@ int WINAPI wWinMain(_In_ HINSTANCE /*instance*/, _In_opt_ HINSTANCE /*prevInstan
                     _In_ int /*showCmd*/) {
 	const std::vector<std::wstring> args = CommandLineArgs();
 
-	std::wstring stockSP;     // GameData\jk2sp.exe if Steam asked for singleplayer
-	std::wstring gameDataDir; // folder of the stock exe Steam passed, if any
+	std::wstring stockSP;  // GameData\jk2sp.exe if Steam asked for singleplayer
+	std::wstring stockMP;  // GameData\jk2mp.exe if Steam asked for multiplayer
+	std::wstring steamDir; // folder of the stock exe Steam passed, if any
 	std::wstring requestedClient;
 	std::vector<std::wstring> gameArgs;
 
@@ -423,12 +528,13 @@ int WINAPI wWinMain(_In_ HINSTANCE /*instance*/, _In_opt_ HINSTANCE /*prevInstan
 		const std::wstring &arg = args[i];
 		const std::wstring name = BaseName(arg);
 
-		if (EqualsIgnoreCase(name, L"jk2sp.exe")) {
+		if (EqualsIgnoreCase(name, SINGLEPLAYER.stockExe)) {
 			stockSP = arg;
-			gameDataDir = DirName(arg);
-		} else if (EqualsIgnoreCase(name, L"jk2mp.exe")) {
-			gameDataDir = DirName(arg);
-		} else if (EqualsIgnoreCase(arg, L"-client") && i + 1 < args.size()) {
+			steamDir = DirName(arg);
+		} else if (EqualsIgnoreCase(name, MULTIPLAYER.stockExe)) {
+			stockMP = arg;
+			steamDir = DirName(arg);
+		} else if (EqualsIgnoreCase(arg, MULTIPLAYER.option) && i + 1 < args.size()) {
 			++i;
 			requestedClient = args[i];
 		} else {
@@ -436,11 +542,34 @@ int WINAPI wWinMain(_In_ HINSTANCE /*instance*/, _In_opt_ HINSTANCE /*prevInstan
 		}
 	}
 
-	const std::wstring exe = stockSP.empty() ? ResolveClient(requestedClient, gameDataDir) : stockSP;
-	if (exe.empty()) {
+	// Where portable clients may live: the folder Steam passed, and the one
+	// jk2x\ sits in. GameData is the first of them holding the game files.
+	GameDataPaths paths;
+	if (!steamDir.empty()) {
+		paths.searchDirs.push_back(steamDir);
+	}
+	paths.searchDirs.push_back(DirName(ExeDir()));
+	for (const std::wstring &dir : paths.searchDirs) {
+		if (HasGameFiles(dir)) {
+			paths.gameData = dir;
+			break;
+		}
+	}
+	if (stockMP.empty() && !paths.gameData.empty()) {
+		stockMP = paths.gameData + L'\\' + MULTIPLAYER.stockExe; // for -client stock without Steam
+	}
+
+	const std::optional<Launch> launch = stockSP.empty()
+	                                         ? ResolveLaunch(MP_CLIENTS, MULTIPLAYER, requestedClient, paths, stockMP)
+	                                         : ResolveLaunch(SP_CLIENTS, SINGLEPLAYER, {}, paths, stockSP);
+	if (!launch) {
 		return 1;
 	}
 
-	const std::optional<DWORD> exitCode = RunAndWait(exe, gameArgs);
+	// jk2x's own arguments first, so the user's can override them
+	std::vector<std::wstring> launchArgs = launch->args;
+	launchArgs.insert(launchArgs.end(), gameArgs.begin(), gameArgs.end());
+
+	const std::optional<DWORD> exitCode = RunAndWait(launch->exe, launchArgs);
 	return exitCode ? static_cast<int>(*exitCode) : 1;
 }
