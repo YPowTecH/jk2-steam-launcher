@@ -1,11 +1,11 @@
 /*
-jk2x - Steam launcher for Star Wars Jedi Knight II: Jedi Outcast that starts
-a modern client (EternalJK2MV, JK2MV, NWH, OpenJO, or any other exe) instead
-of the stock game exes.
+JK2 Steam Launcher (jk2-steam-launcher) - Steam launcher for Star Wars Jedi
+Knight II: Jedi Outcast that starts a modern client (EternalJK2MV, JK2MV,
+NWH, OpenJO, or any other exe) instead of the stock game exes.
 
 Steam launch option:
-    "<path>\jk2x.exe" %command%
-    "<path>\jk2x.exe" -client jk2mv %command%
+    "<path>\jk2-steam-launcher.exe" %command%
+    "<path>\jk2-steam-launcher.exe" -client jk2mv %command%
 
 Steam replaces %command% with the stock exe it would have run:
     GameData\jk2mp.exe  ("Launch Multiplayer")   -> a client from MP_CLIENTS
@@ -15,9 +15,9 @@ Steam replaces %command% with the stock exe it would have run:
 Started without Steam (no stock exe on the command line) it does multiplayer.
 Every other argument is passed on to the game.
 
-jk2x waits until the game and everything it started have exited, so Steam
-keeps tracking the session (playtime, overlay, friends list). If jk2x is
-closed (Steam's "Stop" button) the game is closed with it.
+The launcher waits until the game and everything it started have exited, so
+Steam keeps tracking the session (playtime, overlay, friends list). If the
+launcher is closed (Steam's "Stop" button) the game is closed with it.
 
 Which multiplayer client:
     -client <name>    a client from MP_CLIENTS by one of its short names
@@ -35,7 +35,8 @@ Installed EternalJK2MV/JK2MV find the game's assets0-5.pk3 in the Steam
 folder by themselves (through the registry entry Steam writes for JK2).
 Portable JK2MV builds can't (fs_assetspath is compiled out of them), nor can
 NWH, so they live in GameData or keep their own copies of the assets.
-OpenJO can: jk2x points its fs_cdpath at GameData when it lives elsewhere.
+OpenJO can: the launcher points its fs_cdpath at GameData when it lives
+elsewhere.
 */
 
 #include <windows.h>
@@ -53,7 +54,7 @@ OpenJO can: jk2x points its fs_cdpath at GameData when it lives elsewhere.
 
 namespace {
 
-constexpr const wchar_t *TITLE = L"jk2x";
+constexpr const wchar_t *TITLE = L"JK2 Steam Launcher";
 
 // Windows paths can be longer than MAX_PATH; buffers grow up to this
 constexpr DWORD MAX_LONG_PATH = 32768;
@@ -74,7 +75,7 @@ struct Client {
 	// Portable clients are looked for in GameData and, if set, GameData\<dir>
 	const wchar_t *portableDir;
 	// Cvar that points the client at the game files when it doesn't live in
-	// GameData itself (jk2x passes +set <cvar> "<GameData>"). nullptr if the
+	// GameData itself (the launcher passes +set <cvar> "<GameData>"). nullptr if the
 	// client has no such setting.
 	const wchar_t *gameDataCvar;
 };
@@ -109,7 +110,7 @@ constexpr Mode SINGLEPLAYER{ nullptr, L"singleplayer engine", L"jk2sp.exe",
 
 struct Launch {
 	std::wstring exe;
-	std::vector<std::wstring> args; // jk2x's own arguments, before the user's
+	std::vector<std::wstring> args; // the launcher's own arguments, before the user's
 };
 
 struct HandleCloser {
@@ -543,7 +544,7 @@ int WINAPI wWinMain(_In_ HINSTANCE /*instance*/, _In_opt_ HINSTANCE /*prevInstan
 	}
 
 	// Where portable clients may live: the folder Steam passed, and the one
-	// jk2x\ sits in. GameData is the first of them holding the game files.
+	// jk2-steam-launcher\ sits in. GameData is the first holding the game files.
 	GameDataPaths paths;
 	if (!steamDir.empty()) {
 		paths.searchDirs.push_back(steamDir);
@@ -566,7 +567,7 @@ int WINAPI wWinMain(_In_ HINSTANCE /*instance*/, _In_opt_ HINSTANCE /*prevInstan
 		return 1;
 	}
 
-	// jk2x's own arguments first, so the user's can override them
+	// the launcher's own arguments first, so the user's can override them
 	std::vector<std::wstring> launchArgs = launch->args;
 	launchArgs.insert(launchArgs.end(), gameArgs.begin(), gameArgs.end());
 

@@ -1,10 +1,11 @@
-jk2x - launch Tommyternal / JK2MV / NWH / OpenJO from Steam's Jedi Outcast
-==========================================================================
+JK2 Steam Launcher - launch Tommyternal / JK2MV / NWH / OpenJO from Steam's Jedi Outcast
+========================================================================================
 
-jk2x makes Steam's "Play" button for Star Wars Jedi Knight II: Jedi Outcast
-start modern clients - EternalJK2MV, JK2MV or NWH for multiplayer, OpenJO for
-singleplayer - while Steam keeps tracking them (playtime, overlay, friends
-list). Nothing of the clients or the game is changed.
+JK2 Steam Launcher makes Steam's "Play" button for Star Wars Jedi Knight II:
+Jedi Outcast start modern clients - EternalJK2MV, JK2MV or NWH for
+multiplayer, OpenJO for singleplayer - while Steam keeps tracking them
+(playtime, overlay, friends list). Nothing of the clients or the game is
+changed.
 
 You need
 --------
@@ -23,13 +24,14 @@ You need
 
 Install
 -------
-1. Copy this "jk2x" folder into your Jedi Outcast GameData folder, usually:
+1. Copy this "jk2-steam-launcher" folder into your Jedi Outcast GameData
+   folder, usually:
      C:\Program Files (x86)\Steam\steamapps\common\Jedi Outcast\GameData
 
 2. In Steam: right-click Jedi Outcast > Properties > General > Launch Options,
    and paste (adjust the path if your Steam library is elsewhere):
 
-     "C:\Program Files (x86)\Steam\steamapps\common\Jedi Outcast\GameData\jk2x\jk2x.exe" %command%
+     "C:\Program Files (x86)\Steam\steamapps\common\Jedi Outcast\GameData\jk2-steam-launcher\jk2-steam-launcher.exe" %command%
 
 3. Press Play and pick "Launch Multiplayer" or "Launch Single Player".
 
@@ -37,16 +39,16 @@ Which program starts
 --------------------
 Single Player: OpenJO if it's installed, otherwise the original jk2sp.exe.
 
-Multiplayer: the first client jk2x finds - EternalJK2MV (Tommyternal),
+Multiplayer: the first client it finds - EternalJK2MV (Tommyternal),
 JK2MV, NWH. To pick one, add -client and its name before %command%:
 
-     "...\GameData\jk2x\jk2x.exe" -client tommy %command%
-     "...\GameData\jk2x\jk2x.exe" -client jk2mv %command%
-     "...\GameData\jk2x\jk2x.exe" -client nwh %command%
+     "...\GameData\jk2-steam-launcher\jk2-steam-launcher.exe" -client tommy %command%
+     "...\GameData\jk2-steam-launcher\jk2-steam-launcher.exe" -client jk2mv %command%
+     "...\GameData\jk2-steam-launcher\jk2-steam-launcher.exe" -client nwh %command%
 
 or "stock" for the game's own jk2mp.exe, or the full path to any client exe:
 
-     "...\GameData\jk2x\jk2x.exe" -client "D:\Games\SomeClient\client.exe" %command%
+     "...\GameData\jk2-steam-launcher\jk2-steam-launcher.exe" -client "D:\Games\SomeClient\client.exe" %command%
 
 Clients are found where their installer put them, or as a portable exe in
 the GameData folder (OpenJO also in GameData\OpenJO). Each is started from
@@ -56,12 +58,12 @@ Portable clients: NWH, and portable builds of EternalJK2MV or JK2MV, can't
 read the game files from the Steam folder. They need copies of
 GameData\base\assets0.pk3, assets1.pk3, assets2.pk3 and assets5.pk3 in their
 own base folder, or to be placed in GameData itself. The installed versions
-don't have this problem, and neither does OpenJO in GameData\OpenJO (jk2x
-points it at the game files). OpenJO keeps its saves and settings in
-Documents\My Games\OpenJO, separate from the original game's saves.
+don't have this problem, and neither does OpenJO in GameData\OpenJO (the
+launcher points it at the game files). OpenJO keeps its saves and settings
+in Documents\My Games\OpenJO, separate from the original game's saves.
 
 Anything after %command% (like +set fs_game ProAt) is passed on to the game.
 
 Uninstall
 ---------
-Clear the Steam launch option and delete the jk2x folder.
+Clear the Steam launch option and delete the jk2-steam-launcher folder.

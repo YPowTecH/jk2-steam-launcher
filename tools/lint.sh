@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Lint jk2x with clang-format (formatting) and clang-tidy (static analysis,
-# configured in .clang-tidy). MSVC's /W4 /WX /permissive- and /analyze run as
-# part of the normal CMake build.
+# Lint jk2-steam-launcher with clang-format (formatting) and clang-tidy
+# (static analysis, configured in .clang-tidy). MSVC's /W4 /WX /permissive-
+# and /analyze run as part of the normal CMake build.
 #
 # Usage: tools/lint.sh [--fix]
 #   --fix  reformat the sources in place instead of only checking
