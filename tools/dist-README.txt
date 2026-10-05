@@ -67,3 +67,9 @@ Anything after %command% (like +set fs_game ProAt) is passed on to the game.
 Uninstall
 ---------
 Clear the Steam launch option and delete the jk2-steam-launcher folder.
+
+License and source
+------------------
+Copyright (C) 2026 YPowTecH. Free software under the GNU General Public
+License v3.0 or later - see LICENSE.txt. Source code:
+https://github.com/YPowTecH/jk2-steam-launcher

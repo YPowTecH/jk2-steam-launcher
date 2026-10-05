@@ -4,6 +4,7 @@
 #
 #   dist/jk2-steam-launcher/jk2-steam-launcher.exe
 #   dist/jk2-steam-launcher/README.txt
+#   dist/jk2-steam-launcher/LICENSE.txt   (GPLv3, which must ship with the exe)
 #
 # Usage: tools/package.sh [--install]
 #   --install  also put the folder into the Steam install
@@ -23,6 +24,7 @@ rm -rf "$DIST"
 mkdir -p "$DIST"
 cp "$EXE" "$DIST/"
 cp "$ROOT/tools/dist-README.txt" "$DIST/README.txt"
+cp "$ROOT/LICENSE" "$DIST/LICENSE.txt"
 
 # Windows' own tar.exe (bsdtar, Windows 10+) writes a standard zip. Not
 # PowerShell 5's Compress-Archive or .NET Framework's ZipFile: they store

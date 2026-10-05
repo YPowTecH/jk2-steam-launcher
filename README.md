@@ -87,3 +87,7 @@ tools/lint.sh --fix  # apply clang-format
 - [`.editorconfig`](.editorconfig) / [`.gitattributes`](.gitattributes): UTF-8, LF line endings.
 
 Needs LLVM (clang-format, clang-tidy) — set `LLVM_BIN` if it isn't in `C:\Program Files\LLVM\bin` or on `PATH`.
+
+## License
+
+Copyright (C) 2026 YPowTecH. JK2 Steam Launcher is free software under the [GNU General Public License v3.0 or later](LICENSE) (`GPL-3.0-or-later`). It contains no code from the game, JK2MV, NWH or OpenJK; it only starts them as separate programs, each under its own license.

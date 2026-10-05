@@ -16,4 +16,4 @@ The exe isn't code-signed, so Windows may show a SmartScreen warning the first t
 
 **SHA-256** of `jk2-steam-launcher.zip`: `@SHA256@`
 
-*Unofficial; not affiliated with Lucasfilm, Valve, JK2MV, EternalJK2MV, NWH or OpenJO.*
+Free software under the [GPLv3](https://github.com/YPowTecH/jk2-steam-launcher/blob/main/LICENSE). *Unofficial; not affiliated with Lucasfilm, Valve, JK2MV, EternalJK2MV, NWH or OpenJO.*
