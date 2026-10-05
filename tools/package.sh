@@ -24,7 +24,12 @@ mkdir -p "$DIST"
 cp "$EXE" "$DIST/"
 cp "$ROOT/tools/dist-README.txt" "$DIST/README.txt"
 
-(cd "$ROOT/dist" && rm -f "$NAME.zip" && powershell.exe -NoProfile -Command "Compress-Archive -Path $NAME -DestinationPath $NAME.zip")
+# Windows' own tar.exe (bsdtar, Windows 10+) writes a standard zip. Not
+# PowerShell 5's Compress-Archive or .NET Framework's ZipFile: they store
+# "dir\file" paths, which 7-Zip and non-Windows unzippers don't treat as
+# folders. Git Bash's own tar can't write zips.
+WIN_TAR="$(cygpath -u "${SYSTEMROOT:-C:\\Windows}")/System32/tar.exe"
+(cd "$ROOT/dist" && rm -f "$NAME.zip" && "$WIN_TAR" -a -c -f "$NAME.zip" "$NAME")
 echo "Packaged $DIST and dist/$NAME.zip"
 
 if [ "${1:-}" = "--install" ]; then

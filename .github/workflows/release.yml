@@ -1,0 +1,59 @@
+name: Release
+
+# Builds jk2-steam-launcher.zip and publishes it as a GitHub Release.
+# Runs when a version tag is pushed (git tag -a v1.2.3 && git push origin v1.2.3),
+# or by hand for an existing tag: Actions > Release > Run workflow.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to build and release (e.g. v1.0.0)
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-2022
+    env:
+      TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Configure
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A Win32
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Package
+        shell: bash
+        run: bash tools/package.sh
+
+      - name: Release notes
+        shell: bash
+        run: |
+          sha=$(sha256sum dist/jk2-steam-launcher.zip | cut -d' ' -f1)
+          sed -e "s/@TAG@/$TAG/g" -e "s/@SHA256@/$sha/g" tools/release-notes.md > dist/notes.md
+          cat dist/notes.md
+
+      - name: Publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" dist/jk2-steam-launcher.zip --clobber
+          else
+            gh release create "$TAG" dist/jk2-steam-launcher.zip \
+              --verify-tag \
+              --title "JK2 Steam Launcher $TAG" \
+              --notes-file dist/notes.md \
+              --generate-notes
+          fi

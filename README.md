@@ -6,6 +6,10 @@ JK2 Steam Launcher does not replace or modify the clients or the game. It is one
 
 Unofficial; not affiliated with Lucasfilm, Valve, JK2MV, EternalJK2MV, NWH or OpenJO.
 
+## Download
+
+Get **[jk2-steam-launcher.zip](https://github.com/YPowTecH/jk2-steam-launcher/releases/latest/download/jk2-steam-launcher.zip)** from the [latest release](https://github.com/YPowTecH/jk2-steam-launcher/releases/latest), unzip the `jk2-steam-launcher` folder into `...\steamapps\common\Jedi Outcast\GameData`, and set the Steam launch option below.
+
 ## What it does
 
 Steam launch option:
@@ -68,6 +72,17 @@ tools/package.sh --install  # also copies it into the Steam install
 ```
 
 Built 32-bit like the clients and the stock game, with a static runtime, so users need no Visual C++ redistributable.
+
+### Releasing
+
+Push a version tag and the [Release workflow](.github/workflows/release.yml) builds `jk2-steam-launcher.zip` on GitHub and publishes it as a release (notes from [`tools/release-notes.md`](tools/release-notes.md) plus the changes since the previous tag):
+
+```bash
+git tag -a v1.2.3 -m "v1.2.3: ..."
+git push origin v1.2.3
+```
+
+For a tag that already exists: Actions → Release → Run workflow, and enter the tag.
 
 ## Code quality
 
