@@ -38,9 +38,14 @@ jobs:
 
       - name: Release notes
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           sha=$(sha256sum dist/jk2-steam-launcher.zip | cut -d' ' -f1)
           sed -e "s/@TAG@/$TAG/g" -e "s/@SHA256@/$sha/g" tools/release-notes.md > dist/notes.md
+          # GitHub's changelog since the previous tag
+          printf '\n' >> dist/notes.md
+          gh api --method POST "repos/$GITHUB_REPOSITORY/releases/generate-notes" -f tag_name="$TAG" --jq .body >> dist/notes.md
           cat dist/notes.md
 
       - name: Publish
@@ -49,11 +54,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if gh release view "$TAG" > /dev/null 2>&1; then
+            # re-run for an existing release: replace the zip and refresh the notes
             gh release upload "$TAG" dist/jk2-steam-launcher.zip --clobber
+            gh release edit "$TAG" --notes-file dist/notes.md
           else
             gh release create "$TAG" dist/jk2-steam-launcher.zip \
               --verify-tag \
               --title "JK2 Steam Launcher $TAG" \
-              --notes-file dist/notes.md \
-              --generate-notes
+              --notes-file dist/notes.md
           fi
