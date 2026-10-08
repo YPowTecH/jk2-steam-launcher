@@ -15,4 +15,4 @@ The exe isn't signed, so Windows might show a SmartScreen warning the first time
 
 SHA-256 of the zip: `@SHA256@`
 
-Licensed under the GPL v3. Unofficial; not affiliated with Lucasfilm, Valve, JK2MV, EternalJK2MV, NWH or OpenJO.
+Licensed under the GPL v2 or later. Unofficial; not affiliated with Lucasfilm, Valve, JK2MV, EternalJK2MV, NWH or OpenJO.

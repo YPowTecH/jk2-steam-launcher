@@ -72,4 +72,4 @@ To support another client, add a line to the `MP_CLIENTS` or `SP_CLIENTS` table 
 
 ## License
 
-Copyright (C) 2026 YPowTecH. Licensed under the [GPL v3](LICENSE) or later. The launcher doesn't contain any code from the game or the clients, it only starts them.
+Copyright (C) 2026 YPowTecH. Licensed under the [GPL v2](LICENSE) or later. The launcher doesn't contain any code from the game or the clients, it only starts them.

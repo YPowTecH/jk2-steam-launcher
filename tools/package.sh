@@ -4,7 +4,7 @@
 #
 #   dist/jk2-steam-launcher/jk2-steam-launcher.exe
 #   dist/jk2-steam-launcher/README.txt
-#   dist/jk2-steam-launcher/LICENSE.txt   (GPLv3, which must ship with the exe)
+#   dist/jk2-steam-launcher/LICENSE.txt   (GPLv2, which must ship with the exe)
 #
 # Usage: tools/package.sh [--install]
 #   --install  also put the folder into the Steam install

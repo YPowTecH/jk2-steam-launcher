@@ -57,5 +57,5 @@ Clear the launch options in Steam and delete the jk2-steam-launcher folder.
 
 License
 -------
-Copyright (C) 2026 YPowTecH. Licensed under the GPL v3 or later, see
+Copyright (C) 2026 YPowTecH. Licensed under the GPL v2 or later, see
 LICENSE.txt. Source code: https://github.com/YPowTecH/jk2-steam-launcher
