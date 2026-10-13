@@ -23,7 +23,7 @@ Install
 You'll also need a multiplayer client:
   EternalJK2MV: https://github.com/TomArrow/jk2mv/releases (the installer)
   JK2MV:        https://jk2mv.org (the installer)
-  NWH:          no installer, put its files in the GameData folder
+  NWH:          no installer, see "NWH" below
 
 For singleplayer, download OpenJO-windows-x86_64.zip from
 https://github.com/JACoders/OpenJK/releases/tag/latest and unzip it into
@@ -41,12 +41,18 @@ client exe, or use -client stock for the original jk2mp.exe.
 
 Anything after %command% (like +set fs_game ProAt) is passed on to the game.
 
-Portable clients
-----------------
-Portable versions of the clients can't load the game files from the Steam
-folder, so put them in GameData, or keep a copy of assets0.pk3, assets1.pk3,
-assets2.pk3 and assets5.pk3 in their own base folder. The installed versions
-don't have this problem.
+NWH
+---
+NWH doesn't have an installer and can't load the game files from the Steam
+folder, so it needs its own copy of them:
+
+1. Unzip NWH into GameData\NWH (so you have GameData\NWH\nwhmp.exe).
+2. Copy assets0.pk3, assets1.pk3, assets2.pk3 and assets5.pk3 from
+   GameData\base into GameData\NWH\base.
+
+Don't put NWH's files straight into GameData, its OpenAL32.dll would stop
+the original game from starting. Portable versions of the other clients
+need their own copy of the game files too; the installed versions don't.
 
 OpenJO keeps its saves in Documents\My Games\OpenJO, separate from the
 original game's saves.

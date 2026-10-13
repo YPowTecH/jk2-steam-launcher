@@ -35,7 +35,7 @@ The launcher looks for these in order and starts the first one it finds:
 |---|---|---|
 | `tommy` | EternalJK2MV ("Tommyternal") | Installer from its [releases](https://github.com/TomArrow/jk2mv/releases/tag/latest-postxp) |
 | `jk2mv` | JK2MV | Installer from [jk2mv.org](https://jk2mv.org) |
-| `nwh` | NWH | No installer, put its files in `GameData` |
+| `nwh` | NWH | No installer, see below |
 
 To pick one yourself, add `-client` and its name before `%command%`:
 
@@ -45,7 +45,9 @@ To pick one yourself, add `-client` and its name before `%command%`:
 
 You can also give the full path to any client exe, or use `-client stock` for the original `jk2mp.exe`.
 
-Portable versions of these clients can't load the game files from the Steam folder, so they have to live in `GameData` (or keep their own copy of `assets0-5.pk3`). They also come with their own `OpenAL32.dll`, which replaces the game's when you copy them into `GameData`. The installers don't have this problem.
+NWH doesn't have an installer and can't load the game files from the Steam folder, so it needs its own copy of them. Unzip it into `GameData\NWH`, then copy `assets0.pk3`, `assets1.pk3`, `assets2.pk3` and `assets5.pk3` from `GameData\base` into `GameData\NWH\base`. Don't put NWH's files straight into `GameData`, its `OpenAL32.dll` would stop the original game from starting.
+
+Portable versions of the other clients need their own copy of the game files too. The installers don't have this problem.
 
 EternalJK2MV and JK2MV both keep their settings and downloaded maps in `Documents\jk2mv`.
 

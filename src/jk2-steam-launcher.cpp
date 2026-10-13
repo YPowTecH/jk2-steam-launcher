@@ -52,7 +52,9 @@ shortcut does.
 Installed EternalJK2MV/JK2MV find the game's assets0-5.pk3 in the Steam
 folder by themselves (through the registry entry Steam writes for JK2).
 Portable JK2MV builds can't (fs_assetspath is compiled out of them), nor can
-NWH, so they live in GameData or keep their own copies of the assets.
+NWH, so they keep their own copy of the assets, like NWH in GameData\NWH. The
+64-bit NWH must not go into GameData itself: it and the stock exes all load
+OpenAL32.dll from their own folder, and they need different builds of it.
 OpenJO can: the launcher points its fs_cdpath at GameData when it lives
 elsewhere.
 */
@@ -105,7 +107,7 @@ constexpr std::array MP_CLIENTS{
 	//      short names                                                display name                   exes                                              installer key  portable dir  game files cvar
 	Client{ { L"tommy", L"tommyternal", L"eternaljk2mv", L"eternal" }, L"EternalJK2MV (Tommyternal)", { L"eternaljk2mvmp.exe" },                         L"EternalJK2", nullptr,      nullptr },
 	Client{ { L"jk2mv", L"mv" },                                       L"JK2MV",                      { L"jk2mvmp.exe" },                                L"JK2MV",      nullptr,      nullptr },
-	Client{ { L"nwh" },                                                L"NWH",                        { L"nwhmp.exe" },                                  nullptr,       nullptr,      nullptr },
+	Client{ { L"nwh" },                                                L"NWH",                        { L"nwhmp.exe" },                                  nullptr,       L"NWH",       nullptr },
 };
 constexpr std::array SP_CLIENTS{
 	Client{ { L"openjo" },                                             L"OpenJO",                     { L"openjo_sp.x86_64.exe", L"openjo_sp.x86.exe" }, nullptr,       L"OpenJO",    L"fs_cdpath" },
